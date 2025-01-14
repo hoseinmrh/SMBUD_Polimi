@@ -1,4 +1,4 @@
-# Summery of Theoretical Concept Pt.1 (Intro, ER, API, Data Architecture)
+# Summery of Theoretical Concepts. Part 1 (Intro, ER, API, Data Architecture)
 
 Sections:
 

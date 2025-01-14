@@ -1,7 +1,8 @@
 # Neo4j and Cypher Cheat Sheet
 
 In this file we will take a look at how to code and query for Neo4j using Cypher.
-Section:
+
+Sections:
 
 -   [Cypher Syntax](#cypher-syntax)
 -   [Appendix](#appendix)

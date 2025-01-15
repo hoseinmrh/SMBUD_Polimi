@@ -1,4 +1,9 @@
-# Summary of Theoretical Concepts. Part 2 (Columnar Databas, )
+# Summary of Theoretical Concepts. Part 2 (Columnar Databas, ELK)
+
+Sections:
+
+1. [Columnar Databas](#1-columnar-databases)
+2. [ELK Databas](#2-elk)
 
 ## 1. Columnar Databases
 
@@ -190,7 +195,7 @@
 
 ---
 
-## ELK
+## 2. ELK
 
 ### 2.1. **Introduction to Elasticsearch**
 

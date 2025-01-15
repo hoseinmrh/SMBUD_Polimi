@@ -1,4 +1,4 @@
-# Summery of Theoretical Concepts. Part 2 (NoSQL Intro, Neo4j, MongoDB, Redis)
+# Summary of Theoretical Concepts. Part 2 (NoSQL Intro, Neo4j, MongoDB, Redis)
 
 sections:
 

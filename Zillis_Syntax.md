@@ -61,6 +61,90 @@ client.release_collection(
 )
 ```
 
+### 1.6. **Create a Collection with Multiple Vector Fields**
+
+```python
+# Create a collection with multiple vector fields
+schema = client.create_schema(
+    auto_id = False,
+    enable_dynamic_field = True,
+)
+
+# Add primary key field to schema
+schema.add_field(field_name = "custom_id", datatype = DataType.INT64, is_primary = True)
+
+# Binary vector dimensions must be a multiple of 8
+schema.add_field(field_name = "text_vector", datatype = DataType.BINARY_VECTOR, dim = 8)
+
+schema.add_field(field_name = "image_vector", datatype = DataType.FLOAT_VECTOR, dim = 128)
+```
+
+### 1.7. **Manage Indexes**
+
+```python
+# Prepare index parameters
+index_params = client.prepare_index_params()
+
+
+# Add Index
+index_params.add_index(
+    field_name = "text_vector",
+    # In Zilliz Cloud, the index type should always be `AUTOINDEX`.
+    index_type = "AUTOINDEX",
+    # For vector of the `BINARY_VECTOR` type, use `HAMMING` or `JACCARD` as the metric type.
+    metric_type = "HAMMING",
+    params = { "nlist": 128 }
+)
+client.create_index(
+  collection_name = "index_collection", # Specify the collection name
+  index_params = index_params
+)
+
+# Describe index
+index_list = client.list_indexes(
+    collection_name = "index_collection"
+)
+
+# Drop index
+client.drop_index(
+    collection_name = "index_collection",
+    index_name = "vector_index"
+)
+
+
+```
+
+### 1.8 **Manage Aliases**
+
+```python
+# Create alias
+client.create_alias(
+    collection_name = "custom_multiple_vector_field_collection",
+    alias = "custom_alias"
+)
+
+# Collect aliases
+aliases = client.list_aliases(
+    collection_name = "custom_multiple_vector_field_collection"
+)
+
+# Describe alias
+alias_desc = client.describe_alias(
+    alias = "custom_alias"
+)
+
+# Alter Alias
+client.alter_alias(
+    collection_name = "custom_collection",
+    alias = "another_custom_alias"
+)
+
+# Drop Alias
+client.drop_alias(
+    alias = "custom_alias"
+)
+```
+
 ---
 
 ## 2. **Data Insertion**
@@ -77,17 +161,22 @@ insert_status = client.insert(
     collection_name="test_collection",
     data=data
 )
-print(insert_status)
+
+# Insert data into a specific partition
+insert_partition_status = client.insert(
+    collection_name = "quick_setup_collection",
+    data = data,
+    partition_name = "partition_1"
+)
 ```
 
-### 2.2. **Upsert Data**
+### 2.2. **Upsert (Update/Insert) Data**
 
 ```python
 upsert_status = client.upsert(
     collection_name="test_collection",
     data=data  # Data to upsert
 )
-print(upsert_status)
 ```
 
 ### 2.3. **Delete Data**
@@ -97,7 +186,13 @@ delete_status = client.delete(
     collection_name="test_collection",
     filter="id in [1, 2]"  # Filter to delete specific entities
 )
-print(delete_status)
+
+# Delete entities by id
+delete_status = client.delete(
+    collection_name = "quick_setup_collection",
+    ids = [11, 12],
+    partition_name = "partition_1"
+)
 ```
 
 ---
@@ -277,44 +372,80 @@ advanced_query_result = client.query(
     output_fields=["color_tag"],
     limit=3
 )
-print(advanced_query_result)
+
+
+# Count
+advanced_operator_result = client.query(
+    collection_name = "quick_setup_collection",
+    output_fields = ["count(*)"]
+)
+
+
+# Count the number of entities in a partition
+advanced_operator_result = client.query(
+    collection_name = "quick_setup_collection",
+    output_fields = ["count(*)"],
+    partition_names = ["partition_1"]
+)
+
+
+# Count the number of entities that match a specific filter
+advanced_operator_result = client.query(
+    collection_name = "quick_setup_collection",
+    filter = '(color == "red") and (1000 < tag < 1500)',
+    output_fields = ["count(*)"],
+)
+
+```
+
+## 6.4 **Search and Query With Iterators**
+
+```python
+
+# Search with iterators
+query_vectors = [[0.3580376395471989, -0.6023495712049978, 0.18414012509913835, -0.26286205330961354, 0.9029438446296592]]
+search_params = {
+    "metric_type": "IP",
+    "params": {"nprobe": 10}
+}
+
+iterator = collection.search_iterator(
+    data = query_vectors,
+    anns_field = "vector",
+    batch_size = 10, # Number of elements per page returned with .next()
+    param = search_params,
+    output_fields = ["color_tag"],
+    limit = 3
+)
+
+results = []
+
+while True:
+    result = iterator.next()
+    if not result:
+        iterator.close()
+        break
+
+    for hit in result:
+        results.append(hit.to_dict())
+
+
+# Query with iterator
+iterator = collection.query_iterator(
+    batch_size = 10,
+    expr = "color_tag like \"brown_8%\"",
+    output_fields = ["color_tag"]
+)
+
+results = []
+
+while True:
+    result = iterator.next()
+    if not result:
+        iterator.close()
+        break
+
+    results += result
 ```
 
 ---
-
-## 7. **Index Management**
-
-### 7.1. **Create an Index**
-
-```python
-index_params = client.prepare_index_params()
-index_params.add_index(
-    field_name="vector",
-    index_type="AUTOINDEX",
-    metric_type="IP",
-    params={"nlist": 128}
-)
-
-client.create_index(
-    collection_name="test_collection",
-    index_params=index_params
-)
-```
-
-### 7.2. **List Indexes**
-
-```python
-index_list = client.list_indexes(
-    collection_name="test_collection"
-)
-print(index_list)
-```
-
-### 7.3. **Drop an Index**
-
-```python
-client.drop_index(
-    collection_name="test_collection",
-    index_name="vector_index"
-)
-```
